@@ -195,6 +195,19 @@ export function extractArticle(html: string, docId: string, opts: ExtractOptions
     $s.replaceWith($s.contents());
   });
 
+  // 6a. Demote stray <h1> elements in the body to paragraphs. The article's
+  //     real H1 was already extracted as `articleTitle` in step 2, so any
+  //     H1 left in the body is a writer mistake — usually a paragraph that
+  //     got "Heading 1" styling applied by accident in Google Docs.
+  //     Multiple H1s are an SEO problem (confuses crawlers, breaks screen
+  //     reader landmarks), so we don't ship them. The check in checks.ts
+  //     still flags this so the writer fixes the source doc.
+  $body.find("h1").each((_, el) => {
+    const $el = $(el);
+    const inner = $el.html() ?? $el.text();
+    $el.replaceWith(`<p>${inner}</p>`);
+  });
+
   // 6b. Google Docs exports include decorative empty <p> spacers (often
   //     originally `<p><span class="…"></span></p>` whose span we just
   //     unwrapped to nothing). Drop block elements that have no rendered

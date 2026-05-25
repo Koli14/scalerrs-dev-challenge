@@ -202,6 +202,21 @@ export function runChecks(article: ParsedArticle, thresholds: Thresholds): Check
     });
   }
 
+  // Extra H1s in the body. The article title is already the H1; any other
+  // H1 left in the body is a writer mistake (typically a paragraph that
+  // got "Heading 1" styling applied by accident). Multiple H1s confuse
+  // search-engine ranking and screen-reader landmarks.
+  const extraH1s = article.headings.filter((h) => h.level === 1);
+  if (extraH1s.length > 0) {
+    const sample = extraH1s[0].text.slice(0, 70);
+    checks.push({
+      id: "extra-h1",
+      label: "Multiple H1 tags",
+      severity: "fail",
+      detail: `Body contains ${extraH1s.length} extra H1 heading${extraH1s.length === 1 ? "" : "s"} (e.g., "${sample}${extraH1s[0].text.length > 70 ? "…" : ""}"). The article title is already H1 — fix the source doc so body content uses H2+.`,
+    });
+  }
+
   // Heading hierarchy: no skipping levels.
   const skipped: string[] = [];
   let previous = 0;
