@@ -84,12 +84,18 @@ npm run export-sample -- "https://docs.google.com/document/d/<id>/edit"
   check logic is a pure function over `(article, thresholds)`, so the client
   re-runs it locally instead of re-fetching the doc.
 - **Cheerio over jsdom.** Lighter, faster, and we only need DOM traversal.
-- **The "IMAGE N" placeholder convention.** This client's writers don't embed
-  images directly — they paste hyperlinks with the text `IMAGE 1`, `IMAGE 2`
-  pointing at Drive, followed inline by `Alt tag: "…"`. The parser detects
-  this convention and treats those anchors as images (extracting the Drive
-  file ID and the alt text), then rewrites them to real `<img>` tags in the
-  output HTML so the rendered preview matches what readers will see.
+- **The "IMAGE N" placeholder pattern.** I noticed the sample doc doesn't
+  use embedded `<img>` tags — each image is represented as a hyperlink
+  whose visible text is `IMAGE 1` / `IMAGE 2` / `IMAGE 3` pointing at a
+  Drive share URL, followed inline by `Alt tag: "…"`. I don't know whether
+  that's a real internal convention the writing team uses everywhere or
+  something specific to this sample, so the parser hedges: it detects the
+  placeholder pattern *and* falls back to real embedded `<img>` tags. When
+  the placeholder pattern matches, the anchor is treated as an image
+  (extracting the Drive file ID + the alt text) and rewritten to a real
+  `<img>` tag in the output HTML so the rendered preview matches what
+  readers will see. Worth confirming with the team whether this is a
+  documented workflow before relying on it across all their docs.
 
 ---
 
