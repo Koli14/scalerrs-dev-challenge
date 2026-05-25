@@ -31,10 +31,20 @@ export function isDriveUrl(url: string | null | undefined): boolean {
 /**
  * Probe Drive to see whether a file is publicly accessible.
  *
- * Strategy: fetch the unauthenticated direct-download endpoint. If Drive
- * returns image bytes (or even an HTML "confirm download" page for large
- * files), the file is public. If it returns a "request access" / sign-in
- * page or a 401/403/404, treat it as private/inaccessible.
+ * Strategy: GET the unauthenticated download endpoint with redirects
+ * followed. The decisive signal is the **final URL after redirects**:
+ *
+ *  - Final host is `accounts.google.com`     → private (Drive bounced us
+ *                                              to a sign-in page).
+ *  - Final host stays on a Drive/usercontent → public (Drive is willing
+ *    host, *or* response is binary             to serve the file without
+ *    bytes (`image/...`).                      auth).
+ *
+ * Looking at the final URL is far more reliable than substring-matching
+ * the HTML body: Drive's sign-in redirect goes through
+ * `/v3/signin/identifier`, not `/signin`, so naive body inspection
+ * misses it. The HTTP status is also useless here — Drive returns 200
+ * even when it's serving the sign-in page.
  */
 export async function probeDriveAccess(fileId: string, timeoutMs = 6000): Promise<DriveProbeResult> {
   const url = `https://drive.google.com/uc?id=${encodeURIComponent(fileId)}&export=download`;
@@ -47,34 +57,65 @@ export async function probeDriveAccess(fileId: string, timeoutMs = 6000): Promis
       signal: controller.signal,
       headers: { "User-Agent": "Mozilla/5.0 (ArticleQC/1.0)" },
     });
-    if (!res.ok) {
-      return { fileId, publiclyShared: false, error: `HTTP ${res.status}` };
-    }
+
     const contentType = res.headers.get("content-type") ?? "";
+    let finalHost = "";
+    try {
+      finalHost = new URL(res.url).hostname;
+    } catch {
+      // res.url should always parse for a real fetch, but stay defensive.
+    }
+
+    // Drive bounced us to a sign-in page → file requires auth → private.
+    if (finalHost === "accounts.google.com" || res.url.includes("ServiceLogin")) {
+      return {
+        fileId,
+        publiclyShared: false,
+        contentType,
+        error: "Redirected to Google sign-in — file is not publicly shared",
+      };
+    }
+
+    if (!res.ok) {
+      return { fileId, publiclyShared: false, contentType, error: `HTTP ${res.status}` };
+    }
+
+    // Drive served us image bytes directly → public.
     if (contentType.startsWith("image/")) {
       return { fileId, publiclyShared: true, contentType };
     }
-    // For HTML responses, check whether it's a "you need permission" / sign-in page
-    // or a legitimate "scan-warning / confirm download" interstitial that Drive
-    // serves for large public files.
+
+    // HTML response that stayed on a Drive/usercontent host is Drive's
+    // "scan-warning / confirm download" interstitial, served for larger
+    // public files. That still means the file IS public.
+    const onDriveHost =
+      finalHost === "drive.google.com" ||
+      finalHost.endsWith(".usercontent.google.com") ||
+      finalHost.endsWith(".googleusercontent.com");
+
     if (contentType.includes("text/html")) {
-      const body = await res.text();
-      const lower = body.toLowerCase();
-      const isSignInOrDenied =
-        lower.includes("accounts.google.com/signin") ||
-        lower.includes("you need access") ||
-        lower.includes("request access") ||
-        lower.includes("sign in to continue") ||
-        lower.includes("you don&#39;t have access") ||
-        lower.includes("you don't have access");
-      if (isSignInOrDenied) {
-        return { fileId, publiclyShared: false, contentType, error: "private or unshared" };
+      if (onDriveHost) {
+        return { fileId, publiclyShared: true, contentType };
       }
-      // Anything else from Drive on a successful GET is treated as accessible.
+      return {
+        fileId,
+        publiclyShared: false,
+        contentType,
+        error: `Unexpected redirect to ${finalHost || "unknown host"}`,
+      };
+    }
+
+    // Some other binary content-type from Drive — served, so public.
+    if (onDriveHost) {
       return { fileId, publiclyShared: true, contentType };
     }
-    // Some other binary type (zip, etc.) — still served, so it's accessible.
-    return { fileId, publiclyShared: true, contentType };
+
+    return {
+      fileId,
+      publiclyShared: false,
+      contentType,
+      error: `Unexpected final host ${finalHost || "(unknown)"}`,
+    };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { fileId, publiclyShared: false, error: msg };
