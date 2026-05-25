@@ -111,6 +111,7 @@ npm run export-sample -- "https://docs.google.com/document/d/<id>/edit"
 | Images publicly shared | Server-side fetch verifies every image is accessible |
 | Images have alt text | Warn per image without alt |
 | Product link count | Min/max configurable; "product" = host matches the configured product domain (auto-suggested from the most-common external host) |
+| Link reachability | Server-side HEAD (with GET fallback) on every external link. Broken product links are **fail** (lost conversions); broken non-product links are **warn**; 401/403/429 responses are surfaced as "bot-blocked, verify manually" rather than treated as broken |
 | Heading hierarchy | Warn on level skips (H1 → H3, etc.) |
 | Paragraph length | Warn for passages over 150 words |
 
@@ -157,9 +158,6 @@ Things I'd build next if this was a real product:
   Drive images — they degrade silently (someone deletes a file, ownership
   transfers, sharing changes). When an image stops being publicly accessible
   the system pages the editor on Slack.
-- **Link health.** HEAD every external link and flag 404s / redirects.
-  Especially valuable for product links — broken product links cost the
-  client money.
 - **LLM tone + brand voice linting.** Pipe the article through an Anthropic
   call with a per-client style guide; surface "this paragraph reads more
   promotional than the brand voice allows" findings as warn-severity checks.

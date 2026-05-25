@@ -10,11 +10,24 @@ export interface ParsedImage {
   driveError?: string;
 }
 
+export interface LinkHealth {
+  status: number | null;
+  /** 2xx response. */
+  ok: boolean;
+  /** 401 / 403 / 429 — likely bot-blocking, not a true break. */
+  blocked: boolean;
+  /** 4xx (non-blocking) / 5xx / network error. */
+  broken: boolean;
+  finalUrl: string | null;
+  error?: string;
+}
+
 export interface ParsedLink {
   href: string;
   text: string;
   type: LinkType;
   host: string;
+  health?: LinkHealth;
 }
 
 export interface ParsedHeading {

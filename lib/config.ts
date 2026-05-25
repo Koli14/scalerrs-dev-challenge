@@ -28,4 +28,8 @@ export const CHECK_CONFIG = {
     /** Per-image probe timeout against Drive (ms). */
     probeTimeoutMs: 6000,
   },
+  linkCheck: {
+    /** Per-link probe timeout when checking external link reachability (ms). */
+    probeTimeoutMs: 5000,
+  },
 } as const;

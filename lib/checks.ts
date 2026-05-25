@@ -162,6 +162,46 @@ export function runChecks(article: ParsedArticle, thresholds: Thresholds): Check
     meta: { productDomain: thresholds.productDomain || article.productDomainSuggestion },
   });
 
+  // Link reachability — only run if we have probe results.
+  const checkedLinks = article.links.filter((l) => l.health);
+  if (checkedLinks.length > 0) {
+    const brokenProduct = checkedLinks.filter((l) => l.type === "product" && l.health!.broken);
+    const brokenOther = checkedLinks.filter((l) => l.type !== "product" && l.health!.broken);
+    const blocked = checkedLinks.filter((l) => l.health!.blocked);
+    const issues: string[] = [];
+    if (brokenProduct.length > 0) {
+      issues.push(
+        `${brokenProduct.length} broken product link${brokenProduct.length === 1 ? "" : "s"} (${brokenProduct
+          .map((l) => l.health!.status ?? "net err")
+          .join(", ")})`
+      );
+    }
+    if (brokenOther.length > 0) {
+      issues.push(
+        `${brokenOther.length} broken non-product link${brokenOther.length === 1 ? "" : "s"} (${brokenOther
+          .map((l) => l.health!.status ?? "net err")
+          .join(", ")})`
+      );
+    }
+    if (blocked.length > 0) {
+      issues.push(
+        `${blocked.length} link${blocked.length === 1 ? "" : "s"} blocked our probe (403/429) — verify manually`
+      );
+    }
+    let severity: CheckResult["severity"] = "pass";
+    if (brokenProduct.length > 0) severity = "fail";
+    else if (brokenOther.length > 0 || blocked.length > 0) severity = "warn";
+    checks.push({
+      id: "links-reachable",
+      label: "Link reachability",
+      severity,
+      detail:
+        issues.length > 0
+          ? issues.join("; ") + "."
+          : `All ${checkedLinks.length} external links reachable.`,
+    });
+  }
+
   // Heading hierarchy: no skipping levels.
   const skipped: string[] = [];
   let previous = 0;

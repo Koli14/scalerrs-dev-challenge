@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import type { Element } from "domhandler";
 import { unwrapGoogleRedirect, buildLink, suggestProductDomain } from "./links";
 import { extractDriveFileId, isDriveUrl, probeDriveAccess } from "./drive";
+import { probeLinks } from "./linkcheck";
 import type { ParsedArticle, ParsedImage, ParsedHeading, ParsedLink } from "./types";
 
 const DOC_ID_RE = /\/document\/d\/([a-zA-Z0-9_-]+)/;
@@ -298,11 +299,44 @@ export async function validateImages(article: ParsedArticle): Promise<ParsedArti
   return article;
 }
 
+/**
+ * Probe every external link for reachability and stamp the result onto
+ * the corresponding ParsedLink entries. Internal anchors / mailto / tel
+ * are skipped.
+ */
+export async function validateLinks(article: ParsedArticle): Promise<ParsedArticle> {
+  const probeTargets = article.links.filter(
+    (l) =>
+      l.type !== "internal-anchor" &&
+      l.type !== "mailto" &&
+      l.type !== "tel" &&
+      /^https?:/i.test(l.href)
+  );
+  if (probeTargets.length === 0) return article;
+  const results = await probeLinks(probeTargets.map((l) => l.href));
+  for (const link of article.links) {
+    const r = results.get(link.href);
+    if (r) {
+      link.health = {
+        status: r.status,
+        ok: r.ok,
+        blocked: r.blocked,
+        broken: r.broken,
+        finalUrl: r.finalUrl,
+        error: r.error,
+      };
+    }
+  }
+  return article;
+}
+
 export async function parseDoc(docUrl: string, productDomain?: string): Promise<ParsedArticle> {
   const docId = extractDocId(docUrl);
   const html = await fetchDocHtml(docId);
   const article = extractArticle(html, docId, { productDomain });
-  await validateImages(article);
+  // Both validators do parallel network work; run them concurrently so the
+  // total wait is max(images, links) instead of images + links.
+  await Promise.all([validateImages(article), validateLinks(article)]);
   return article;
 }
 
