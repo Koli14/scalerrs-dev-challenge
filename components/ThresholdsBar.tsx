@@ -12,17 +12,22 @@ function NumberInput({
   label,
   value,
   onChange,
+  min = 0,
+  max,
 }: {
   label: string;
   value: number;
   onChange: (n: number) => void;
+  min?: number;
+  max?: number;
 }) {
   return (
     <label className="flex flex-col gap-1 text-xs">
       <span className="text-[var(--color-muted)] uppercase tracking-wider">{label}</span>
       <input
         type="number"
-        min={0}
+        min={min}
+        max={max}
         value={value}
         onChange={(e) => onChange(Number(e.target.value || 0))}
         className="w-20 rounded bg-[var(--color-surface)] border border-[var(--color-border)] px-2 py-1 text-sm focus:outline-none focus:border-[var(--color-accent)]"
@@ -32,7 +37,27 @@ function NumberInput({
 }
 
 export function ThresholdsBar({ thresholds, onChange, productDomainSuggestion }: Props) {
-  const set = (patch: Partial<Thresholds>) => onChange({ ...thresholds, ...patch });
+  // Patch the thresholds while enforcing the monotonic constraint min ≤ max
+  // on each paired range. If the user raises the min above the current max
+  // (or lowers the max below the current min) we move the other side to
+  // match, so the editor never lands in an inconsistent state where the
+  // check would always fail no matter what the article looks like.
+  const set = (patch: Partial<Thresholds>) => {
+    const next = { ...thresholds, ...patch };
+    if (patch.minImages !== undefined && next.minImages > next.maxImages) {
+      next.maxImages = next.minImages;
+    }
+    if (patch.maxImages !== undefined && next.maxImages < next.minImages) {
+      next.minImages = next.maxImages;
+    }
+    if (patch.minProductLinks !== undefined && next.minProductLinks > next.maxProductLinks) {
+      next.maxProductLinks = next.minProductLinks;
+    }
+    if (patch.maxProductLinks !== undefined && next.maxProductLinks < next.minProductLinks) {
+      next.minProductLinks = next.maxProductLinks;
+    }
+    onChange(next);
+  };
   return (
     <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
       <div className="text-xs uppercase tracking-wider text-[var(--color-muted)] mb-2">
@@ -42,21 +67,25 @@ export function ThresholdsBar({ thresholds, onChange, productDomainSuggestion }:
         <NumberInput
           label="Min images"
           value={thresholds.minImages}
+          max={thresholds.maxImages}
           onChange={(n) => set({ minImages: n })}
         />
         <NumberInput
           label="Max images"
           value={thresholds.maxImages}
+          min={thresholds.minImages}
           onChange={(n) => set({ maxImages: n })}
         />
         <NumberInput
           label="Min product links"
           value={thresholds.minProductLinks}
+          max={thresholds.maxProductLinks}
           onChange={(n) => set({ minProductLinks: n })}
         />
         <NumberInput
           label="Max product links"
           value={thresholds.maxProductLinks}
+          min={thresholds.minProductLinks}
           onChange={(n) => set({ maxProductLinks: n })}
         />
         <label className="flex flex-col gap-1 text-xs flex-1 min-w-[200px]">
