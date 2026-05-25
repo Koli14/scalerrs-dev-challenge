@@ -1,32 +1,30 @@
-import { CHECK_CONFIG } from "./config";
+import { CHECK_CONFIG } from './config'
 
 export interface DriveProbeResult {
-  fileId: string;
-  publiclyShared: boolean;
-  contentType?: string;
-  error?: string;
+  fileId: string
+  publiclyShared: boolean
+  contentType?: string
+  error?: string
 }
 
-const DRIVE_FILE_ID_RE = /\/file\/d\/([a-zA-Z0-9_-]+)/;
-const DRIVE_QUERY_ID_RE = /[?&]id=([a-zA-Z0-9_-]+)/;
-const DRIVE_OPEN_ID_RE = /\/open\?id=([a-zA-Z0-9_-]+)/;
+const DRIVE_FILE_ID_RE = /\/file\/d\/([a-zA-Z0-9_-]+)/
+const DRIVE_QUERY_ID_RE = /[?&]id=([a-zA-Z0-9_-]+)/
+const DRIVE_OPEN_ID_RE = /\/open\?id=([a-zA-Z0-9_-]+)/
 
 export function extractDriveFileId(url: string | null | undefined): string | null {
-  if (!url) return null;
+  if (!url) return null
   const m =
-    url.match(DRIVE_FILE_ID_RE) ||
-    url.match(DRIVE_OPEN_ID_RE) ||
-    url.match(DRIVE_QUERY_ID_RE);
-  return m ? m[1] : null;
+    url.match(DRIVE_FILE_ID_RE) || url.match(DRIVE_OPEN_ID_RE) || url.match(DRIVE_QUERY_ID_RE)
+  return m ? m[1] : null
 }
 
 export function isDriveUrl(url: string | null | undefined): boolean {
-  if (!url) return false;
+  if (!url) return false
   try {
-    const host = new URL(url).hostname;
-    return host === "drive.google.com" || host.endsWith(".googleusercontent.com");
+    const host = new URL(url).hostname
+    return host === 'drive.google.com' || host.endsWith('.googleusercontent.com')
   } catch {
-    return false;
+    return false
   }
 }
 
@@ -50,82 +48,82 @@ export function isDriveUrl(url: string | null | undefined): boolean {
  */
 export async function probeDriveAccess(
   fileId: string,
-  timeoutMs: number = CHECK_CONFIG.drive.probeTimeoutMs
+  timeoutMs: number = CHECK_CONFIG.drive.probeTimeoutMs,
 ): Promise<DriveProbeResult> {
-  const url = `https://drive.google.com/uc?id=${encodeURIComponent(fileId)}&export=download`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const url = `https://drive.google.com/uc?id=${encodeURIComponent(fileId)}&export=download`
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const res = await fetch(url, {
-      method: "GET",
-      redirect: "follow",
+      method: 'GET',
+      redirect: 'follow',
       signal: controller.signal,
-      headers: { "User-Agent": "Mozilla/5.0 (ArticleQC/1.0)" },
-    });
+      headers: { 'User-Agent': 'Mozilla/5.0 (ArticleQC/1.0)' },
+    })
 
-    const contentType = res.headers.get("content-type") ?? "";
-    let finalHost = "";
+    const contentType = res.headers.get('content-type') ?? ''
+    let finalHost = ''
     try {
-      finalHost = new URL(res.url).hostname;
+      finalHost = new URL(res.url).hostname
     } catch {
       // res.url should always parse for a real fetch, but stay defensive.
     }
 
     // Drive bounced us to a sign-in page → file requires auth → private.
-    if (finalHost === "accounts.google.com" || res.url.includes("ServiceLogin")) {
+    if (finalHost === 'accounts.google.com' || res.url.includes('ServiceLogin')) {
       return {
         fileId,
         publiclyShared: false,
         contentType,
-        error: "Redirected to Google sign-in — file is not publicly shared",
-      };
+        error: 'Redirected to Google sign-in — file is not publicly shared',
+      }
     }
 
     if (!res.ok) {
-      return { fileId, publiclyShared: false, contentType, error: `HTTP ${res.status}` };
+      return { fileId, publiclyShared: false, contentType, error: `HTTP ${res.status}` }
     }
 
     // Drive served us image bytes directly → public.
-    if (contentType.startsWith("image/")) {
-      return { fileId, publiclyShared: true, contentType };
+    if (contentType.startsWith('image/')) {
+      return { fileId, publiclyShared: true, contentType }
     }
 
     // HTML response that stayed on a Drive/usercontent host is Drive's
     // "scan-warning / confirm download" interstitial, served for larger
     // public files. That still means the file IS public.
     const onDriveHost =
-      finalHost === "drive.google.com" ||
-      finalHost.endsWith(".usercontent.google.com") ||
-      finalHost.endsWith(".googleusercontent.com");
+      finalHost === 'drive.google.com' ||
+      finalHost.endsWith('.usercontent.google.com') ||
+      finalHost.endsWith('.googleusercontent.com')
 
-    if (contentType.includes("text/html")) {
+    if (contentType.includes('text/html')) {
       if (onDriveHost) {
-        return { fileId, publiclyShared: true, contentType };
+        return { fileId, publiclyShared: true, contentType }
       }
       return {
         fileId,
         publiclyShared: false,
         contentType,
-        error: `Unexpected redirect to ${finalHost || "unknown host"}`,
-      };
+        error: `Unexpected redirect to ${finalHost || 'unknown host'}`,
+      }
     }
 
     // Some other binary content-type from Drive — served, so public.
     if (onDriveHost) {
-      return { fileId, publiclyShared: true, contentType };
+      return { fileId, publiclyShared: true, contentType }
     }
 
     return {
       fileId,
       publiclyShared: false,
       contentType,
-      error: `Unexpected final host ${finalHost || "(unknown)"}`,
-    };
+      error: `Unexpected final host ${finalHost || '(unknown)'}`,
+    }
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { fileId, publiclyShared: false, error: msg };
+    const msg = e instanceof Error ? e.message : String(e)
+    return { fileId, publiclyShared: false, error: msg }
   } finally {
-    clearTimeout(timer);
+    clearTimeout(timer)
   }
 }
 
@@ -134,5 +132,5 @@ export async function probeDriveAccess(
  * without needing the original Drive page to embed.
  */
 export function driveThumbnailUrl(fileId: string, width = 480): string {
-  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w${width}`;
+  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w${width}`
 }

@@ -63,16 +63,16 @@ npm run export-sample -- "https://docs.google.com/document/d/<id>/edit"
 
 ### Key files
 
-| File | What it does |
-|---|---|
-| `lib/parser.ts` | The brain. Fetches `https://docs.google.com/document/d/<id>/export?format=html`, parses with cheerio, extracts meta fields, images, links, headings, and produces clean output HTML. |
-| `lib/drive.ts` | Server-side probe for each Drive image — hits the unauthenticated `uc?id=…` endpoint and classifies the response as public / private / unknown. |
-| `lib/links.ts` | Unwraps Google's `https://www.google.com/url?q=…` redirector and classifies links (product vs. external) by host. |
-| `lib/checks.ts` | Pure quality-check function. Takes `(article, thresholds)` and returns a list of `{ severity: 'pass'|'warn'|'fail', label, detail }`. Used both server-side on parse and client-side so threshold tweaks recompute checks without a round-trip. |
-| `app/api/parse/route.ts` | Wires parser → drive probe → checks into one POST response. |
-| `app/api/upload/route.ts` | Placeholder publisher. Echoes the payload that a real WP/Shopify integration would send. |
-| `app/page.tsx` | The dashboard. Single page; client-side state. |
-| `scripts/export-sample.ts` | Runs the parser against the sample doc and writes `output/sample-article.html`. |
+| File                       | What it does                                                                                                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `lib/parser.ts`            | The brain. Fetches `https://docs.google.com/document/d/<id>/export?format=html`, parses with cheerio, extracts meta fields, images, links, headings, and produces clean output HTML. |
+| `lib/drive.ts`             | Server-side probe for each Drive image — hits the unauthenticated `uc?id=…` endpoint and classifies the response as public / private / unknown.                                      |
+| `lib/links.ts`             | Unwraps Google's `https://www.google.com/url?q=…` redirector and classifies links (product vs. external) by host.                                                                    |
+| `lib/checks.ts`            | Pure quality-check function. Takes `(article, thresholds)` and returns a list of `{ severity: 'pass'                                                                                 | 'warn' | 'fail', label, detail }`. Used both server-side on parse and client-side so threshold tweaks recompute checks without a round-trip. |
+| `app/api/parse/route.ts`   | Wires parser → drive probe → checks into one POST response.                                                                                                                          |
+| `app/api/upload/route.ts`  | Placeholder publisher. Echoes the payload that a real WP/Shopify integration would send.                                                                                             |
+| `app/page.tsx`             | The dashboard. Single page; client-side state.                                                                                                                                       |
+| `scripts/export-sample.ts` | Runs the parser against the sample doc and writes `output/sample-article.html`.                                                                                                      |
 
 ### Why this shape
 
@@ -80,7 +80,7 @@ npm run export-sample -- "https://docs.google.com/document/d/<id>/edit"
   fetch — a browser request would be CORS-blocked, and we also want to call
   `docs.google.com/export?format=html` without exposing details to clients.
 - **Pure check function on both sides.** When the editor edits the
-  thresholds bar, the failing-check count needs to update *instantly*. The
+  thresholds bar, the failing-check count needs to update _instantly_. The
   check logic is a pure function over `(article, thresholds)`, so the client
   re-runs it locally instead of re-fetching the doc.
 - **Cheerio over jsdom.** Lighter, faster, and we only need DOM traversal.
@@ -90,7 +90,7 @@ npm run export-sample -- "https://docs.google.com/document/d/<id>/edit"
   Drive share URL, followed inline by `Alt tag: "…"`. I don't know whether
   that's a real internal convention the writing team uses everywhere or
   something specific to this sample, so the parser hedges: it detects the
-  placeholder pattern *and* falls back to real embedded `<img>` tags. When
+  placeholder pattern _and_ falls back to real embedded `<img>` tags. When
   the placeholder pattern matches, the anchor is treated as an image
   (extracting the Drive file ID + the alt text) and rewritten to a real
   `<img>` tag in the output HTML so the rendered preview matches what
@@ -101,19 +101,19 @@ npm run export-sample -- "https://docs.google.com/document/d/<id>/edit"
 
 ## What the QC report covers
 
-| Check | Rule |
-|---|---|
-| Meta title present + length | 30–65 chars recommended |
-| Meta description present + length | 110–160 chars recommended |
-| Article title (H1) | Must exist |
-| Image count | Min/max configurable in UI (defaults 2–8) |
-| Images hosted on Google Drive | Drive file ID required on every image |
-| Images publicly shared | Server-side fetch verifies every image is accessible |
-| Images have alt text | Warn per image without alt |
-| Product link count | Min/max configurable; "product" = host matches the configured product domain (auto-suggested from the most-common external host) |
-| Link reachability | Server-side HEAD (with GET fallback) on every external link. Broken product links are **fail** (lost conversions); broken non-product links are **warn**; 401/403/429 responses are surfaced as "bot-blocked, verify manually" rather than treated as broken |
-| Heading hierarchy | Warn on level skips (H1 → H3, etc.) |
-| Paragraph length | Warn for passages over 150 words |
+| Check                             | Rule                                                                                                                                                                                                                                                         |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Meta title present + length       | 30–65 chars recommended                                                                                                                                                                                                                                      |
+| Meta description present + length | 110–160 chars recommended                                                                                                                                                                                                                                    |
+| Article title (H1)                | Must exist                                                                                                                                                                                                                                                   |
+| Image count                       | Min/max configurable in UI (defaults 2–8)                                                                                                                                                                                                                    |
+| Images hosted on Google Drive     | Drive file ID required on every image                                                                                                                                                                                                                        |
+| Images publicly shared            | Server-side fetch verifies every image is accessible                                                                                                                                                                                                         |
+| Images have alt text              | Warn per image without alt                                                                                                                                                                                                                                   |
+| Product link count                | Min/max configurable; "product" = host matches the configured product domain (auto-suggested from the most-common external host)                                                                                                                             |
+| Link reachability                 | Server-side HEAD (with GET fallback) on every external link. Broken product links are **fail** (lost conversions); broken non-product links are **warn**; 401/403/429 responses are surfaced as "bot-blocked, verify manually" rather than treated as broken |
+| Heading hierarchy                 | Warn on level skips (H1 → H3, etc.)                                                                                                                                                                                                                          |
+| Paragraph length                  | Warn for passages over 150 words                                                                                                                                                                                                                             |
 
 Thresholds and the product domain are editable from the dashboard's
 **Quality thresholds** bar, with the suggested product domain auto-detected

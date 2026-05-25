@@ -1,16 +1,24 @@
-"use client";
+'use client'
 
-import type { ParsedImage } from "@/lib/types";
+import type { ParsedImage } from '@/lib/types'
 
-function Badge({ ok, label, neutralLabel }: { ok: boolean | null; label: string; neutralLabel?: string }) {
-  let color = "var(--color-fail)";
-  let text = `✕ ${label}`;
+function Badge({
+  ok,
+  label,
+  neutralLabel,
+}: {
+  ok: boolean | null
+  label: string
+  neutralLabel?: string
+}) {
+  let color = 'var(--color-fail)'
+  let text = `✕ ${label}`
   if (ok === true) {
-    color = "var(--color-pass)";
-    text = `✓ ${label}`;
+    color = 'var(--color-pass)'
+    text = `✓ ${label}`
   } else if (ok === null) {
-    color = "var(--color-muted)";
-    text = `? ${neutralLabel ?? label}`;
+    color = 'var(--color-muted)'
+    text = `? ${neutralLabel ?? label}`
   }
   return (
     <span
@@ -19,7 +27,7 @@ function Badge({ ok, label, neutralLabel }: { ok: boolean | null; label: string;
     >
       {text}
     </span>
-  );
+  )
 }
 
 export function ImageChecklist({ images }: { images: ParsedImage[] }) {
@@ -35,7 +43,7 @@ export function ImageChecklist({ images }: { images: ParsedImage[] }) {
           {images.map((img, i) => {
             const thumb = img.driveFileId
               ? `https://drive.google.com/thumbnail?id=${img.driveFileId}&sz=w200`
-              : img.imgSrc;
+              : img.imgSrc
             return (
               <li key={i} className="p-3 flex gap-3">
                 <div className="flex-none w-20 h-20 rounded bg-[var(--color-surface-2)] overflow-hidden">
@@ -51,7 +59,9 @@ export function ImageChecklist({ images }: { images: ParsedImage[] }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">
-                    {img.alt || <span className="italic text-[var(--color-muted)]">no alt text</span>}
+                    {img.alt || (
+                      <span className="italic text-[var(--color-muted)]">no alt text</span>
+                    )}
                   </div>
                   {img.driveUrl && (
                     <a
@@ -73,10 +83,10 @@ export function ImageChecklist({ images }: { images: ParsedImage[] }) {
                   )}
                 </div>
               </li>
-            );
+            )
           })}
         </ul>
       )}
     </div>
-  );
+  )
 }

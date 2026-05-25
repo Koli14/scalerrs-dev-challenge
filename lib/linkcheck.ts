@@ -1,22 +1,21 @@
-import { CHECK_CONFIG } from "./config";
+import { CHECK_CONFIG } from './config'
 
 export interface LinkProbeResult {
-  href: string;
-  status: number | null;
-  finalUrl: string | null;
+  href: string
+  status: number | null
+  finalUrl: string | null
   /** 2xx response. */
-  ok: boolean;
+  ok: boolean
   /** True if the response was a redirect chain. */
-  redirected: boolean;
+  redirected: boolean
   /** 401 / 403 / 429 — likely bot-blocking (Cloudflare etc.), not a true break. */
-  blocked: boolean;
+  blocked: boolean
   /** 4xx (except blocked codes) or 5xx or network error. */
-  broken: boolean;
-  error?: string;
+  broken: boolean
+  error?: string
 }
 
-const USER_AGENT =
-  "Mozilla/5.0 (compatible; ArticleQC/1.0; SEO link checker)";
+const USER_AGENT = 'Mozilla/5.0 (compatible; ArticleQC/1.0; SEO link checker)'
 
 function passThroughResult(href: string): LinkProbeResult {
   return {
@@ -27,7 +26,7 @@ function passThroughResult(href: string): LinkProbeResult {
     redirected: false,
     blocked: false,
     broken: false,
-  };
+  }
 }
 
 /**
@@ -41,40 +40,40 @@ function passThroughResult(href: string): LinkProbeResult {
  */
 export async function probeLink(
   href: string,
-  timeoutMs: number = CHECK_CONFIG.linkCheck.probeTimeoutMs
+  timeoutMs: number = CHECK_CONFIG.linkCheck.probeTimeoutMs,
 ): Promise<LinkProbeResult> {
-  if (!/^https?:/i.test(href)) return passThroughResult(href);
+  if (!/^https?:/i.test(href)) return passThroughResult(href)
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
 
-  const tryFetch = (method: "HEAD" | "GET") =>
+  const tryFetch = (method: 'HEAD' | 'GET') =>
     fetch(href, {
       method,
-      redirect: "follow",
+      redirect: 'follow',
       signal: controller.signal,
       headers: {
-        "User-Agent": USER_AGENT,
-        Accept: "*/*",
+        'User-Agent': USER_AGENT,
+        Accept: '*/*',
       },
-    });
+    })
 
   try {
-    let res = await tryFetch("HEAD");
+    let res = await tryFetch('HEAD')
     if (res.status === 405 || res.status === 501 || res.status === 400) {
       // Server doesn't support HEAD — try GET. Drain the body so we don't
       // hold the socket open longer than necessary.
-      res = await tryFetch("GET");
+      res = await tryFetch('GET')
       try {
-        await res.body?.cancel();
+        await res.body?.cancel()
       } catch {
         /* ignore */
       }
     }
 
-    const status = res.status;
-    const blocked = status === 401 || status === 403 || status === 429;
-    const broken = !res.ok && !blocked;
+    const status = res.status
+    const blocked = status === 401 || status === 403 || status === 429
+    const broken = !res.ok && !blocked
 
     return {
       href,
@@ -84,9 +83,9 @@ export async function probeLink(
       redirected: res.redirected,
       blocked,
       broken,
-    };
+    }
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
+    const msg = e instanceof Error ? e.message : String(e)
     return {
       href,
       status: null,
@@ -96,9 +95,9 @@ export async function probeLink(
       blocked: false,
       broken: true,
       error: msg,
-    };
+    }
   } finally {
-    clearTimeout(timer);
+    clearTimeout(timer)
   }
 }
 
@@ -108,13 +107,13 @@ export async function probeLink(
  * hit once.
  */
 export async function probeLinks(hrefs: string[]): Promise<Map<string, LinkProbeResult>> {
-  const unique = Array.from(new Set(hrefs));
-  const results = await Promise.allSettled(unique.map((h) => probeLink(h)));
-  const map = new Map<string, LinkProbeResult>();
+  const unique = Array.from(new Set(hrefs))
+  const results = await Promise.allSettled(unique.map((h) => probeLink(h)))
+  const map = new Map<string, LinkProbeResult>()
   results.forEach((r, i) => {
-    const href = unique[i];
-    if (r.status === "fulfilled") {
-      map.set(href, r.value);
+    const href = unique[i]
+    if (r.status === 'fulfilled') {
+      map.set(href, r.value)
     } else {
       map.set(href, {
         href,
@@ -125,8 +124,8 @@ export async function probeLinks(hrefs: string[]): Promise<Map<string, LinkProbe
         blocked: false,
         broken: true,
         error: String(r.reason),
-      });
+      })
     }
-  });
-  return map;
+  })
+  return map
 }

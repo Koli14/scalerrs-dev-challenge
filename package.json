@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "export-sample": "tsx scripts/export-sample.ts"
   },
   "dependencies": {
@@ -16,11 +18,12 @@
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
-    "@tailwindcss/postcss": "^4.3.0",
     "postcss": "^8.5.15",
+    "prettier": "3.8.3",
     "tailwindcss": "^4.3.0",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3"

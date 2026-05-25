@@ -1,11 +1,11 @@
-"use client";
+'use client'
 
-import type { Thresholds } from "@/lib/types";
+import type { Thresholds } from '@/lib/types'
 
 interface Props {
-  thresholds: Thresholds;
-  onChange: (next: Thresholds) => void;
-  productDomainSuggestion: string | null;
+  thresholds: Thresholds
+  onChange: (next: Thresholds) => void
+  productDomainSuggestion: string | null
 }
 
 function NumberInput({
@@ -15,11 +15,11 @@ function NumberInput({
   min = 0,
   max,
 }: {
-  label: string;
-  value: number;
-  onChange: (n: number) => void;
-  min?: number;
-  max?: number;
+  label: string
+  value: number
+  onChange: (n: number) => void
+  min?: number
+  max?: number
 }) {
   return (
     <label className="flex flex-col gap-1 text-xs">
@@ -33,7 +33,7 @@ function NumberInput({
         className="w-20 rounded bg-[var(--color-surface)] border border-[var(--color-border)] px-2 py-1 text-sm focus:outline-none focus:border-[var(--color-accent)]"
       />
     </label>
-  );
+  )
 }
 
 export function ThresholdsBar({ thresholds, onChange, productDomainSuggestion }: Props) {
@@ -43,21 +43,21 @@ export function ThresholdsBar({ thresholds, onChange, productDomainSuggestion }:
   // match, so the editor never lands in an inconsistent state where the
   // check would always fail no matter what the article looks like.
   const set = (patch: Partial<Thresholds>) => {
-    const next = { ...thresholds, ...patch };
+    const next = { ...thresholds, ...patch }
     if (patch.minImages !== undefined && next.minImages > next.maxImages) {
-      next.maxImages = next.minImages;
+      next.maxImages = next.minImages
     }
     if (patch.maxImages !== undefined && next.maxImages < next.minImages) {
-      next.minImages = next.maxImages;
+      next.minImages = next.maxImages
     }
     if (patch.minProductLinks !== undefined && next.minProductLinks > next.maxProductLinks) {
-      next.maxProductLinks = next.minProductLinks;
+      next.maxProductLinks = next.minProductLinks
     }
     if (patch.maxProductLinks !== undefined && next.maxProductLinks < next.minProductLinks) {
-      next.minProductLinks = next.maxProductLinks;
+      next.minProductLinks = next.maxProductLinks
     }
-    onChange(next);
-  };
+    onChange(next)
+  }
   return (
     <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
       <div className="text-xs uppercase tracking-wider text-[var(--color-muted)] mb-2">
@@ -103,7 +103,7 @@ export function ThresholdsBar({ thresholds, onChange, productDomainSuggestion }:
           </span>
           <input
             type="text"
-            placeholder={productDomainSuggestion ?? "e.g. andar.com"}
+            placeholder={productDomainSuggestion ?? 'e.g. andar.com'}
             value={thresholds.productDomain}
             onChange={(e) => set({ productDomain: e.target.value.trim() })}
             className="rounded bg-[var(--color-surface)] border border-[var(--color-border)] px-2 py-1 text-sm focus:outline-none focus:border-[var(--color-accent)]"
@@ -111,5 +111,5 @@ export function ThresholdsBar({ thresholds, onChange, productDomainSuggestion }:
         </label>
       </div>
     </div>
-  );
+  )
 }

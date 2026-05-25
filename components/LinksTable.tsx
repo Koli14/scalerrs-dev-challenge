@@ -1,39 +1,41 @@
-"use client";
+'use client'
 
-import type { ParsedLink, LinkHealth } from "@/lib/types";
+import type { ParsedLink, LinkHealth } from '@/lib/types'
 
-const TYPE_COLOR: Record<ParsedLink["type"], string> = {
-  product: "var(--color-pass)",
-  external: "var(--color-muted)",
-  "internal-anchor": "var(--color-accent)",
-  mailto: "var(--color-accent)",
-  tel: "var(--color-accent)",
-};
+const TYPE_COLOR: Record<ParsedLink['type'], string> = {
+  product: 'var(--color-pass)',
+  external: 'var(--color-muted)',
+  'internal-anchor': 'var(--color-accent)',
+  mailto: 'var(--color-accent)',
+  tel: 'var(--color-accent)',
+}
 
-function healthBadge(h: LinkHealth | undefined): { color: string; text: string; title: string } | null {
-  if (!h) return null;
+function healthBadge(
+  h: LinkHealth | undefined,
+): { color: string; text: string; title: string } | null {
+  if (!h) return null
   if (h.broken) {
     return {
-      color: "var(--color-fail)",
-      text: h.status ? `${h.status}` : "net err",
+      color: 'var(--color-fail)',
+      text: h.status ? `${h.status}` : 'net err',
       title: h.error || `HTTP ${h.status} — broken`,
-    };
+    }
   }
   if (h.blocked) {
     return {
-      color: "var(--color-warn)",
-      text: h.status ? `${h.status}` : "blocked",
+      color: 'var(--color-warn)',
+      text: h.status ? `${h.status}` : 'blocked',
       title: `HTTP ${h.status} — bot-blocked (verify manually)`,
-    };
+    }
   }
   if (h.ok) {
     return {
-      color: "var(--color-pass)",
-      text: h.status ? `${h.status}` : "ok",
-      title: h.finalUrl && h.finalUrl !== "" ? `Resolved to ${h.finalUrl}` : "Reachable",
-    };
+      color: 'var(--color-pass)',
+      text: h.status ? `${h.status}` : 'ok',
+      title: h.finalUrl && h.finalUrl !== '' ? `Resolved to ${h.finalUrl}` : 'Reachable',
+    }
   }
-  return null;
+  return null
 }
 
 export function LinksTable({ links }: { links: ParsedLink[] }) {
@@ -57,7 +59,7 @@ export function LinksTable({ links }: { links: ParsedLink[] }) {
             </thead>
             <tbody>
               {links.map((l, i) => {
-                const badge = healthBadge(l.health);
+                const badge = healthBadge(l.health)
                 return (
                   <tr key={i} className="border-t border-[var(--color-border)] align-top">
                     <td className="p-2">
@@ -65,7 +67,7 @@ export function LinksTable({ links }: { links: ParsedLink[] }) {
                         className="inline-block px-1.5 py-0.5 rounded border text-[0.65rem] uppercase tracking-wider"
                         style={{ color: TYPE_COLOR[l.type], borderColor: TYPE_COLOR[l.type] }}
                       >
-                        {l.type === "internal-anchor" ? "anchor" : l.type}
+                        {l.type === 'internal-anchor' ? 'anchor' : l.type}
                       </span>
                     </td>
                     <td className="p-2">
@@ -96,12 +98,12 @@ export function LinksTable({ links }: { links: ParsedLink[] }) {
                       </a>
                     </td>
                   </tr>
-                );
+                )
               })}
             </tbody>
           </table>
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-import type { ParsedLink, LinkType } from "./types";
+import type { ParsedLink, LinkType } from './types'
 
 /**
  * Google Docs exports wrap every external link in a redirector:
@@ -6,61 +6,60 @@ import type { ParsedLink, LinkType } from "./types";
  * Unwrap it to recover the actual destination.
  */
 export function unwrapGoogleRedirect(href: string): string {
-  if (!href) return href;
+  if (!href) return href
   try {
-    const url = new URL(href);
+    const url = new URL(href)
     const isGoogleRedirect =
-      (url.hostname === "www.google.com" || url.hostname === "google.com") &&
-      url.pathname === "/url" &&
-      url.searchParams.has("q");
+      (url.hostname === 'www.google.com' || url.hostname === 'google.com') &&
+      url.pathname === '/url' &&
+      url.searchParams.has('q')
     if (isGoogleRedirect) {
-      const q = url.searchParams.get("q");
-      if (q) return q;
+      const q = url.searchParams.get('q')
+      if (q) return q
     }
   } catch {
     // Not a parseable URL — return as-is.
   }
-  return href;
+  return href
 }
 
 function safeHost(href: string): string {
   try {
-    return new URL(href).hostname.replace(/^www\./, "");
+    return new URL(href).hostname.replace(/^www\./, '')
   } catch {
-    return "";
+    return ''
   }
 }
 
 export function classifyLink(href: string, productDomain: string): LinkType {
-  if (!href) return "external";
-  if (href.startsWith("#")) return "internal-anchor";
-  if (href.startsWith("mailto:")) return "mailto";
-  if (href.startsWith("tel:")) return "tel";
-  const host = safeHost(href);
-  if (productDomain && host && host.endsWith(productDomain.replace(/^www\./, ""))) {
-    return "product";
+  if (!href) return 'external'
+  if (href.startsWith('#')) return 'internal-anchor'
+  if (href.startsWith('mailto:')) return 'mailto'
+  if (href.startsWith('tel:')) return 'tel'
+  const host = safeHost(href)
+  if (productDomain && host && host.endsWith(productDomain.replace(/^www\./, ''))) {
+    return 'product'
   }
-  return "external";
+  return 'external'
 }
 
 export function suggestProductDomain(links: { href: string }[]): string | null {
-  const counts = new Map<string, number>();
+  const counts = new Map<string, number>()
   for (const link of links) {
-    const host = safeHost(link.href);
-    if (!host) continue;
-    if (host === "google.com" || host === "docs.google.com" || host === "drive.google.com")
-      continue;
-    counts.set(host, (counts.get(host) ?? 0) + 1);
+    const host = safeHost(link.href)
+    if (!host) continue
+    if (host === 'google.com' || host === 'docs.google.com' || host === 'drive.google.com') continue
+    counts.set(host, (counts.get(host) ?? 0) + 1)
   }
-  let best: string | null = null;
-  let bestCount = 0;
+  let best: string | null = null
+  let bestCount = 0
   for (const [host, count] of counts) {
     if (count > bestCount) {
-      best = host;
-      bestCount = count;
+      best = host
+      bestCount = count
     }
   }
-  return best;
+  return best
 }
 
 export function buildLink(href: string, text: string, productDomain: string): ParsedLink {
@@ -69,5 +68,5 @@ export function buildLink(href: string, text: string, productDomain: string): Pa
     text,
     type: classifyLink(href, productDomain),
     host: safeHost(href),
-  };
+  }
 }

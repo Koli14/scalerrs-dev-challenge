@@ -1,15 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server'
 
-export const runtime = "nodejs";
+export const runtime = 'nodejs'
 
 interface UploadRequest {
-  platform?: "wordpress" | "shopify";
+  platform?: 'wordpress' | 'shopify'
   payload?: {
-    metaTitle?: string;
-    metaDescription?: string;
-    articleTitle?: string;
-    articleHtml?: string;
-  };
+    metaTitle?: string
+    metaDescription?: string
+    articleTitle?: string
+    articleHtml?: string
+  }
 }
 
 /**
@@ -21,32 +21,32 @@ interface UploadRequest {
  * exactly what would be sent.
  */
 export async function POST(req: Request) {
-  let body: UploadRequest;
+  let body: UploadRequest
   try {
-    body = (await req.json()) as UploadRequest;
+    body = (await req.json()) as UploadRequest
   } catch {
-    return NextResponse.json({ error: "Request body must be JSON." }, { status: 400 });
+    return NextResponse.json({ error: 'Request body must be JSON.' }, { status: 400 })
   }
 
-  const platform = body.platform ?? "wordpress";
-  const payload = body.payload ?? {};
+  const platform = body.platform ?? 'wordpress'
+  const payload = body.payload ?? {}
 
   if (!payload.articleTitle || !payload.articleHtml) {
     return NextResponse.json(
-      { error: "articleTitle and articleHtml are required." },
-      { status: 400 }
-    );
+      { error: 'articleTitle and articleHtml are required.' },
+      { status: 400 },
+    )
   }
 
   // Simulate network latency so the UI loading state is visible.
-  await new Promise((r) => setTimeout(r, 400));
+  await new Promise((r) => setTimeout(r, 400))
 
   return NextResponse.json({
-    status: "ok",
+    status: 'ok',
     platform,
     mockPostId: Math.floor(Math.random() * 100000),
     sentAt: new Date().toISOString(),
     payload,
     note: `This is a placeholder. A real ${platform} integration would POST this payload to the platform's REST API.`,
-  });
+  })
 }

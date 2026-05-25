@@ -1,11 +1,11 @@
-import type { ParsedArticle } from "./types";
+import type { ParsedArticle } from './types'
 
 function escapeHtml(s: string): string {
   return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 
 /**
@@ -20,10 +20,10 @@ function escapeHtml(s: string): string {
  * both server code (the export script) and client components (the Download
  * button in PublishBar).
  */
-export function wrapAsStandaloneHtml(article: ParsedArticle, extraBodyHtml = ""): string {
+export function wrapAsStandaloneHtml(article: ParsedArticle, extraBodyHtml = ''): string {
   // For SEO, <title> is the meta title (what shows in the SERP / browser tab).
   // The article title lives in the body <h1>.
-  const docTitle = article.metaTitle || article.articleTitle || "Article";
+  const docTitle = article.metaTitle || article.articleTitle || 'Article'
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -52,7 +52,7 @@ ${extraBodyHtml}
   </article>
 </body>
 </html>
-`;
+`
 }
 
-export { escapeHtml };
+export { escapeHtml }
