@@ -1,3 +1,5 @@
+import { CHECK_CONFIG } from "./config";
+
 export interface DriveProbeResult {
   fileId: string;
   publiclyShared: boolean;
@@ -46,7 +48,10 @@ export function isDriveUrl(url: string | null | undefined): boolean {
  * misses it. The HTTP status is also useless here — Drive returns 200
  * even when it's serving the sign-in page.
  */
-export async function probeDriveAccess(fileId: string, timeoutMs = 6000): Promise<DriveProbeResult> {
+export async function probeDriveAccess(
+  fileId: string,
+  timeoutMs: number = CHECK_CONFIG.drive.probeTimeoutMs
+): Promise<DriveProbeResult> {
   const url = `https://drive.google.com/uc?id=${encodeURIComponent(fileId)}&export=download`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);

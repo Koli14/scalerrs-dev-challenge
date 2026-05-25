@@ -1,10 +1,5 @@
 import type { CheckResult, ParsedArticle, Thresholds } from "./types";
-
-const META_TITLE_MIN = 30;
-const META_TITLE_MAX = 65;
-const META_DESC_MIN = 110;
-const META_DESC_MAX = 160;
-const MAX_PARAGRAPH_WORDS = 150;
+import { CHECK_CONFIG } from "./config";
 
 function range(label: string, value: number, min: number, max: number): { severity: "pass" | "warn"; detail: string } {
   if (value < min) return { severity: "warn", detail: `${label} is ${value} characters — recommended ${min}–${max}.` };
@@ -24,7 +19,12 @@ export function runChecks(article: ParsedArticle, thresholds: Thresholds): Check
       detail: 'Could not find a "Meta Title:" line at the top of the doc.',
     });
   } else {
-    const r = range("Meta title", article.metaTitle.length, META_TITLE_MIN, META_TITLE_MAX);
+    const r = range(
+      "Meta title",
+      article.metaTitle.length,
+      CHECK_CONFIG.metaTitle.minLength,
+      CHECK_CONFIG.metaTitle.maxLength
+    );
     checks.push({ id: "meta-title-length", label: "Meta title length", ...r });
   }
 
@@ -37,7 +37,12 @@ export function runChecks(article: ParsedArticle, thresholds: Thresholds): Check
       detail: 'Could not find a "Meta Description:" line at the top of the doc.',
     });
   } else {
-    const r = range("Meta description", article.metaDescription.length, META_DESC_MIN, META_DESC_MAX);
+    const r = range(
+      "Meta description",
+      article.metaDescription.length,
+      CHECK_CONFIG.metaDescription.minLength,
+      CHECK_CONFIG.metaDescription.maxLength
+    );
     checks.push({ id: "meta-description-length", label: "Meta description length", ...r });
   }
 
@@ -177,15 +182,16 @@ export function runChecks(article: ParsedArticle, thresholds: Thresholds): Check
   const paragraphs = article.plainText
     .split(/(?<=[.!?])\s+(?=[A-Z])/)
     .filter((p) => p.trim().length > 0);
-  const longParas = paragraphs.filter((p) => p.split(/\s+/).length > MAX_PARAGRAPH_WORDS);
+  const maxParaWords = CHECK_CONFIG.paragraph.maxWords;
+  const longParas = paragraphs.filter((p) => p.split(/\s+/).length > maxParaWords);
   checks.push(
     longParas.length === 0
-      ? { id: "paragraph-length", label: "Paragraph length", severity: "pass", detail: `No paragraphs over ${MAX_PARAGRAPH_WORDS} words.` }
+      ? { id: "paragraph-length", label: "Paragraph length", severity: "pass", detail: `No paragraphs over ${maxParaWords} words.` }
       : {
           id: "paragraph-length",
           label: "Paragraph length",
           severity: "warn",
-          detail: `${longParas.length} long passage${longParas.length === 1 ? "" : "s"} (> ${MAX_PARAGRAPH_WORDS} words) — consider splitting.`,
+          detail: `${longParas.length} long passage${longParas.length === 1 ? "" : "s"} (> ${maxParaWords} words) — consider splitting.`,
         }
   );
 
