@@ -8,6 +8,12 @@ function escapeHtml(s: string): string {
     .replace(/"/g, '&quot;')
 }
 
+// WHY: Two things needed the standalone HTML wrapper — the export script that
+// produces the deliverable file, and the Download button in the dashboard.
+// Pulled the wrapping into one function so they can't drift apart. Also worth
+// noting: the <title> tag uses the meta title (what shows in Google search),
+// not the article title. I had those flipped originally; the editor caught
+// it when opening the downloaded file.
 /**
  * Wrap a parsed article's body fragment into a standalone HTML document
  * suitable for opening in a browser, archiving, or sharing with a client.

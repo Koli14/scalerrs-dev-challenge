@@ -65,6 +65,9 @@ export default function Page() {
     }
   }, [data, thresholds.productDomain])
 
+  // WHY: The check function is a plain function, so when the editor changes a
+  // threshold we just re-run it here on the client. No API call, results
+  // update instantly.
   // Recompute checks client-side whenever thresholds change, without re-fetching.
   const liveChecks: CheckResult[] = data ? runChecks(data.article, thresholds) : []
   const failingCount = liveChecks.filter((c) => c.severity === 'fail').length

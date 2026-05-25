@@ -41,6 +41,9 @@ interface ExtractOptions {
   productDomain?: string
 }
 
+// WHY: This is the main parser. It takes the HTML that Google exports from the
+// doc and pulls out all the pieces we need — meta title, meta description, the
+// article title, body HTML, images, and links.
 /**
  * Parse the exported HTML and return a structured article. Image "publiclyShared"
  * is left null here — fill it in by calling `validateImages` afterwards.
@@ -93,6 +96,11 @@ export function extractArticle(
     }
   })
 
+  // WHY: In the sample doc, images aren't actual <img> tags — the writer typed
+  // "IMAGE 1", "IMAGE 2", "IMAGE 3" as text links to Drive with the alt text
+  // written next to them. I noticed this looking at the export. We pick up that
+  // pattern, but we also fall back to normal <img> tags in case other docs
+  // use them.
   // 4. Collect images. This client's writers use a documented convention:
   //    images are represented as placeholder hyperlinks whose link text is
   //    "IMAGE 1", "IMAGE 2", etc., pointing at a Drive share URL — followed
@@ -200,6 +208,10 @@ export function extractArticle(
     $s.replaceWith($s.contents())
   })
 
+  // WHY: The sample doc's conclusion paragraph was styled as Heading 1 by
+  // mistake, so the output ended up with two H1s. That's bad for SEO. We turn
+  // the extras into paragraphs here, and the check below also flags it so the
+  // writer knows to fix it in the source doc.
   // 6a. Demote stray <h1> elements in the body to paragraphs. The article's
   //     real H1 was already extracted as `articleTitle` in step 2, so any
   //     H1 left in the body is a writer mistake — usually a paragraph that
@@ -213,6 +225,9 @@ export function extractArticle(
     $el.replaceWith(`<p>${inner}</p>`)
   })
 
+  // WHY: Google Docs sticks blank paragraphs into the export for spacing.
+  // They'd show up as a weird empty gap at the top of the article if we
+  // didn't strip them out.
   // 6b. Google Docs exports include decorative empty <p> spacers (often
   //     originally `<p><span class="…"></span></p>` whose span we just
   //     unwrapped to nothing). Drop block elements that have no rendered
@@ -352,8 +367,8 @@ export async function parseDoc(docUrl: string, productDomain?: string): Promise<
   const docId = extractDocId(docUrl)
   const html = await fetchDocHtml(docId)
   const article = extractArticle(html, docId, { productDomain })
-  // Both validators do parallel network work; run them concurrently so the
-  // total wait is max(images, links) instead of images + links.
+  // WHY: Image checks and link checks are both network calls, so we run them
+  // in parallel. Total wait time is the slower one, not both added up.
   await Promise.all([validateImages(article), validateLinks(article)])
   return article
 }

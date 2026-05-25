@@ -12,6 +12,10 @@ interface UploadRequest {
   }
 }
 
+// WHY: This is the placeholder upload. The brief said not to build a real
+// integration, just a button that triggers it. So we echo the payload back so
+// the editor can see exactly what would be sent. The real version would POST
+// this to WordPress's REST API or Shopify's admin API.
 /**
  * Placeholder publisher. In production this would forward to:
  *   WordPress: POST {site}/wp-json/wp/v2/posts (with App Password auth)

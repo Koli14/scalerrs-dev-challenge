@@ -1,3 +1,6 @@
+// WHY: Originally the threshold numbers were scattered across checks.ts. Moved
+// them here so they're all in one place. If we want per-client config later
+// (different agencies might want different rules), this is where it slots in.
 /**
  * Centralised tuning constants for the quality checks.
  *

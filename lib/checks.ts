@@ -20,6 +20,9 @@ function range(
   return { severity: 'pass', detail: `${value} characters (recommended ${min}–${max}).` }
 }
 
+// WHY: This is a plain function — same code runs on the server when we parse,
+// and on the client when the editor changes a threshold. So tweaking a
+// threshold updates the result instantly, no API call needed.
 export function runChecks(article: ParsedArticle, thresholds: Thresholds): CheckResult[] {
   const checks: CheckResult[] = []
 
@@ -200,6 +203,9 @@ export function runChecks(article: ParsedArticle, thresholds: Thresholds): Check
     meta: { productDomain: thresholds.productDomain || article.productDomainSuggestion },
   })
 
+  // WHY: Broken product links cost the client real money — those are "fail".
+  // Broken non-product links and bot-blocked ones are just "warn". On the
+  // sample doc this catches 6 broken product links out of 11.
   // Link reachability — only run if we have probe results.
   const checkedLinks = article.links.filter((l) => l.health)
   if (checkedLinks.length > 0) {
@@ -240,6 +246,8 @@ export function runChecks(article: ParsedArticle, thresholds: Thresholds): Check
     })
   }
 
+  // WHY: We fix the H1 mistake silently in the parser, but we still want the
+  // writer to know — otherwise they'll keep doing it.
   // Extra H1s in the body. The article title is already the H1; any other
   // H1 left in the body is a writer mistake (typically a paragraph that
   // got "Heading 1" styling applied by accident). Multiple H1s confuse

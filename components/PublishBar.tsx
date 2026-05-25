@@ -56,6 +56,10 @@ export function PublishBar({ article, failingChecks }: Props) {
     }
   }
 
+  // WHY: What we send to WordPress or Shopify is just the body fragment —
+  // those platforms wrap the content themselves. But what the editor downloads
+  // is meant to be opened in a browser, so it gets the full <html> wrapper
+  // with meta tags in the head.
   const downloadHtml = () => {
     // The API payload uses the body fragment (WordPress / Shopify expect it
     // that way). The download is for human consumption — wrap it in a

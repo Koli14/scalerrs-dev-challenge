@@ -46,6 +46,12 @@ export function isDriveUrl(url: string | null | undefined): boolean {
  * misses it. The HTTP status is also useless here — Drive returns 200
  * even when it's serving the sign-in page.
  */
+// WHY: The first version of this check said all three sample images were
+// public, but when I clicked one I got an "access denied" screen. The bug:
+// the code was looking for the word "signin" in the page body, but Google's
+// actual redirect goes through "/v3/signin/" — so the match missed. The fix
+// is to look at the final URL after redirects instead. If it lands on
+// accounts.google.com, the file's private. Much more reliable.
 export async function probeDriveAccess(
   fileId: string,
   timeoutMs: number = CHECK_CONFIG.drive.probeTimeoutMs,

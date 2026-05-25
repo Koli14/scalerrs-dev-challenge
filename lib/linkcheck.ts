@@ -38,6 +38,10 @@ function passThroughResult(href: string): LinkProbeResult {
  * Cloudflare / Akamai bot detection. Internal anchors / mailto / tel are
  * passed through as ok.
  */
+// WHY: Checks if a link is reachable. HEAD requests are faster, but some sites
+// refuse them with a 405, so we fall back to GET when that happens. Also, a
+// 401, 403, or 429 usually means a bot detector blocked us — not that the
+// link is dead — so we mark those as "blocked", not "broken".
 export async function probeLink(
   href: string,
   timeoutMs: number = CHECK_CONFIG.linkCheck.probeTimeoutMs,

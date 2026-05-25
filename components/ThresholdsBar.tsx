@@ -37,6 +37,10 @@ function NumberInput({
 }
 
 export function ThresholdsBar({ thresholds, onChange, productDomainSuggestion }: Props) {
+  // WHY: I could set min-images to 20 with max still at 8 — an impossible
+  // state where the check would always fail. Now if min goes above max, max
+  // bumps up to match. Auto-clamp instead of showing an error because if you
+  // type 20, you mean at least 20 — the max should follow, not block you.
   // Patch the thresholds while enforcing the monotonic constraint min ≤ max
   // on each paired range. If the user raises the min above the current max
   // (or lowers the max below the current min) we move the other side to
