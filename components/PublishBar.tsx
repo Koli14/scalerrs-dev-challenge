@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ParsedArticle } from "@/lib/types";
+import { wrapAsStandaloneHtml } from "@/lib/render";
 
 interface UploadResult {
   status: string;
@@ -56,7 +57,11 @@ export function PublishBar({ article, failingChecks }: Props) {
   };
 
   const downloadHtml = () => {
-    const blob = new Blob([article.articleHtml], { type: "text/html;charset=utf-8" });
+    // The API payload uses the body fragment (WordPress / Shopify expect it
+    // that way). The download is for human consumption — wrap it in a
+    // standalone HTML document with the meta tags in <head>.
+    const standalone = wrapAsStandaloneHtml(article);
+    const blob = new Blob([standalone], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const slug = (article.articleTitle || article.docId)

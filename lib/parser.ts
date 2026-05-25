@@ -194,6 +194,26 @@ export function extractArticle(html: string, docId: string, opts: ExtractOptions
     $s.replaceWith($s.contents());
   });
 
+  // 6b. Google Docs exports include decorative empty <p> spacers (often
+  //     originally `<p><span class="…"></span></p>` whose span we just
+  //     unwrapped to nothing). Drop block elements that have no rendered
+  //     content. Repeat a few passes because pruning a child can leave
+  //     a now-empty parent.
+  const BLOCKS_TO_PRUNE = "p, div, li, ul, ol";
+  for (let pass = 0; pass < 3; pass++) {
+    let removed = 0;
+    $body.find(BLOCKS_TO_PRUNE).each((_, el) => {
+      const $el = $(el);
+      if ($el.find("img, picture, svg, iframe, video, hr, br").length > 0) return;
+      const text = $el.text().replace(/[\s ]+/g, "");
+      if (text.length === 0) {
+        $el.remove();
+        removed++;
+      }
+    });
+    if (removed === 0) break;
+  }
+
   // 7a. Convert "IMAGE N" placeholder anchors into real <img> tags so the
   //     preview renders the image instead of a text link. We also drop the
   //     trailing `Alt tag: "..."` annotation from the same paragraph since
